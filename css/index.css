@@ -1,0 +1,71 @@
+:root {
+}
+
+.root {
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  max-width: 500px;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccc;
+  padding: 10px;
+  min-height: 50px;
+  min-width: 50px;
+  cursor: pointer;
+  position: relative;
+}
+
+.cell:hover {
+  background-color: #f0f0f0;
+}
+
+.count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: red;
+  /* font-size: 15px; */
+}
+
+.bottom-sheet {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  right: 0;
+  background-color: #cdcdcd;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.bottom-sheet .close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.buttons-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+}
+
+.buttons-container button {
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
