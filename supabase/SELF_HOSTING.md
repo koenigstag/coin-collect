@@ -27,14 +27,20 @@ docker version  # sanity check
 
 ## 2. Get the Supabase self-hosting stack and generate secrets
 
-Pull the official docker-compose project directly (it's actively
-maintained upstream with several supporting config files alongside
-`docker-compose.yml`, so don't copy it into this repo — always fetch the
-current version):
+Pull just the `docker/` folder from the official repo with a sparse
+checkout — it's actively maintained upstream with several supporting
+config files alongside `docker-compose.yml`, so don't copy it into this
+repo (always fetch the current version), and a sparse checkout avoids
+downloading the rest of the (much larger) monorepo — Studio's source,
+docs, etc:
 
 ```bash
-git clone --depth 1 https://github.com/supabase/supabase
-cd supabase/docker
+git clone --filter=blob:none --no-checkout --depth 1 https://github.com/supabase/supabase
+cd supabase
+git sparse-checkout init --cone
+git sparse-checkout set docker
+git checkout master
+cd docker
 cp .env.example .env
 ```
 
@@ -60,7 +66,7 @@ python3 generate-jwt-keys.py "$JWT_SECRET"
 (If `generate-jwt-keys.py` isn't already on the server, copy its contents
 from `supabase/generate-jwt-keys.py` in this repo.)
 
-Now edit `supabase/docker/.env` and set at least:
+Now edit `docker/.env` and set at least:
 
 ```dotenv
 POSTGRES_PASSWORD=<value from above>
@@ -72,63 +78,46 @@ DASHBOARD_PASSWORD=<pick something strong>
 SITE_URL=https://supabase.example.com
 API_EXTERNAL_URL=https://supabase.example.com
 SUPABASE_PUBLIC_URL=https://supabase.example.com
+PROXY_DOMAIN=supabase.example.com
 ```
 
-Leave everything else at its default for a first run.
+`PROXY_DOMAIN` is used in the next step. Leave everything else at its
+default for a first run.
 
-## 3. Start Supabase
+## 3. Start Supabase with HTTPS via the built-in Caddy overlay
 
-```bash
-docker compose up -d
-docker compose ps   # wait until everything is "healthy" / "running"
-```
-
-Studio is now listening on `KONG_HTTP_PORT` from `.env` (default `8000`),
-but only on the server itself for now — that's what the next step fixes.
-
-## 4. Put HTTPS in front of it with Caddy
-
-**This step is not optional.** `coin-collect` is served over HTTPS via
+**HTTPS is not optional.** `coin-collect` is served over HTTPS via
 GitHub Pages, and browsers block a HTTPS page from calling a plain HTTP
 API (mixed content) — including the WebSocket connection Realtime sync
-needs. Since you already have a domain, Caddy gets you a real
-Let's Encrypt certificate with almost no config:
+needs. The `docker/` folder already ships a Caddy overlay
+(`docker-compose.caddy.yml`) that runs Caddy as its own container,
+gets a real Let's Encrypt certificate for `PROXY_DOMAIN` automatically,
+forwards the Supabase API paths to Kong, and puts everything else
+(Studio) behind HTTP basic auth using `DASHBOARD_USERNAME`/
+`DASHBOARD_PASSWORD`. No separate Caddy install needed:
 
 ```bash
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-  | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
-  | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo apt update
-sudo apt install -y caddy
+docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.caddy.yml ps
+# wait until everything is "healthy" / "running"
 ```
 
-Edit `/etc/caddy/Caddyfile` to just:
+Visit `https://supabase.example.com` — you should see a basic-auth
+prompt (`DASHBOARD_USERNAME`/`DASHBOARD_PASSWORD` from step 2), then
+Supabase Studio.
 
-```
-supabase.example.com {
-  reverse_proxy localhost:8000
-}
-```
+From here on, always include `-f docker-compose.yml -f docker-compose.caddy.yml`
+when running `docker compose` commands against this stack (stop, logs,
+restart, etc.), otherwise Caddy won't be part of the command.
 
-Then reload:
-
-```bash
-sudo systemctl reload caddy
-```
-
-Visit `https://supabase.example.com` — you should see the Supabase
-Studio login (the `DASHBOARD_USERNAME`/`DASHBOARD_PASSWORD` from step 2).
-
-## 5. Create the app's table
+## 4. Create the app's table
 
 In Studio → SQL Editor, paste and run `supabase/schema.sql` from this
 repo. This creates the `coin_collections` table, enables Realtime on it,
-and adds permissive RLS policies (the sync code you pick in step 6 is
+and adds permissive RLS policies (the sync code you pick in step 5 is
 what keeps your data private, not a login).
 
-## 6. Point the site at your instance
+## 5. Point the site at your instance
 
 Open Coin Collect, click the settings (⚙) button, and fill in:
 
@@ -138,16 +127,17 @@ Open Coin Collect, click the settings (⚙) button, and fill in:
   device you want synced. Treat it like a password: whoever knows it can
   read/write that device group's data.
 
-Save, then repeat step 6 on your other device(s) with the same sync
+Save, then repeat step 5 on your other device(s) with the same sync
 code. From then on, coin counts update automatically on every device
 without manual export/import.
 
 ## Troubleshooting
 
 - **Nothing loads / CORS errors in the browser console**: check that
-  `SITE_URL`, `API_EXTERNAL_URL`, and `SUPABASE_PUBLIC_URL` in `.env` all
-  match your real HTTPS domain, then `docker compose up -d` again to
-  pick up the change.
+  `SITE_URL`, `API_EXTERNAL_URL`, `SUPABASE_PUBLIC_URL`, and
+  `PROXY_DOMAIN` in `.env` all match your real HTTPS domain, then
+  `docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d`
+  again to pick up the change.
 - **Realtime doesn't push updates**: confirm the table was actually added
   to the `supabase_realtime` publication — rerun the
   `alter publication supabase_realtime add table public.coin_collections;`
