@@ -83,16 +83,19 @@ body {
   border-color: var(--accent);
   color: var(--accent-dark);
   font-weight: 600;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--badge);
 }
 
 .count {
+  display: none;
   position: absolute;
   top: 2px;
   right: 2px;
   min-width: 16px;
   height: 16px;
   padding: 0 3px;
-  display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
