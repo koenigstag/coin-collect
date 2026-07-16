@@ -283,3 +283,11 @@ hr {
 .settings-save-button:hover {
   background-color: var(--success-dark);
 }
+
+.settings-clear-button {
+  background-color: var(--neutral);
+}
+
+.settings-clear-button:hover {
+  background-color: var(--neutral-dark);
+}

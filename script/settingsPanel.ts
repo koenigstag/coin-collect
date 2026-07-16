@@ -77,10 +77,17 @@ function openSettingsSheet() {
   if (existing) {
     const clearButton = document.createElement('button');
     clearButton.innerText = 'Отключить синхронизацию';
-    clearButton.className = 'reset-button';
+    clearButton.className = 'settings-clear-button';
     buttonsContainer.appendChild(clearButton);
 
     clearButton.addEventListener('click', () => {
+      const confirmed = confirm(
+        'Отключить синхронизацию? Настройки Supabase будут удалены с этого устройства.'
+      );
+      if (!confirmed) {
+        return;
+      }
+
       clearSyncConfig();
       location.reload();
     });
