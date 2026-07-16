@@ -63,7 +63,6 @@ body {
   border-radius: 6px;
   background: var(--bg);
   padding: 6px;
-  min-height: 40px;
   min-width: 0;
   aspect-ratio: 1 / 1;
   cursor: pointer;
