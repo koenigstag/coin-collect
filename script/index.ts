@@ -30,5 +30,9 @@ export default function main(rootElement: HTMLElement | null) {
   // first render
   render(getCellsFromStorage());
 
-  initSync().catch((err) => console.error('Sync: initialization failed', err));
+  try {
+    initSync();
+  } catch (err) {
+    console.error('Sync: initialization failed', err);
+  }
 }

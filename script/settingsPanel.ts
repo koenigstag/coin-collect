@@ -41,14 +41,15 @@ function openSettingsSheet() {
   const hint = document.createElement('p');
   hint.className = 'settings-hint';
   hint.innerText =
-    'Введите данные вашего self-hosted Supabase (см. supabase/SELF_HOSTING.md). ' +
-    'Один и тот же код синхронизации нужно ввести на всех устройствах.';
+    'Укажите адрес сервера синхронизации, общий секрет (см. server/README.md, ' +
+    'должен совпадать с AUTH_SECRET на сервере) и код синхронизации. Все три ' +
+    'значения нужно ввести одинаковыми на всех устройствах.';
   sheetElement.appendChild(hint);
 
   const existing = getSyncConfig();
 
-  const urlInput = createField(sheetElement, 'Supabase URL', existing?.url ?? '', 'https://supabase.example.com');
-  const anonKeyInput = createField(sheetElement, 'Anon key', existing?.anonKey ?? '');
+  const serverUrlInput = createField(sheetElement, 'Адрес сервера', existing?.serverUrl ?? '', 'wss://sync.example.com');
+  const secretInput = createField(sheetElement, 'Общий секрет', existing?.secret ?? '');
   const syncCodeInput = createField(sheetElement, 'Код синхронизации', existing?.syncCode ?? '');
 
   const buttonsContainer = document.createElement('div');
@@ -61,16 +62,16 @@ function openSettingsSheet() {
   buttonsContainer.appendChild(saveButton);
 
   saveButton.addEventListener('click', () => {
-    const url = urlInput.value.trim();
-    const anonKey = anonKeyInput.value.trim();
+    const serverUrl = serverUrlInput.value.trim();
+    const secret = secretInput.value.trim();
     const syncCode = syncCodeInput.value.trim();
 
-    if (!url || !anonKey || !syncCode) {
+    if (!serverUrl || !secret || !syncCode) {
       alert('Заполните все три поля');
       return;
     }
 
-    saveSyncConfig({ url, anonKey, syncCode });
+    saveSyncConfig({ serverUrl, secret, syncCode });
     location.reload();
   });
 
@@ -82,7 +83,7 @@ function openSettingsSheet() {
 
     clearButton.addEventListener('click', () => {
       const confirmed = confirm(
-        'Отключить синхронизацию? Настройки Supabase будут удалены с этого устройства.'
+        'Отключить синхронизацию? Адрес сервера, секрет и код будут удалены с этого устройства.'
       );
       if (!confirmed) {
         return;
