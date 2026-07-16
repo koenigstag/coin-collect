@@ -3,15 +3,34 @@
 Coin Collect stores its data in the browser's `localStorage`, which never
 leaves the device. To sync between devices automatically, the site can
 optionally push/pull its data to a Supabase table you host yourself. This
-document is the setup checklist for your own Ubuntu server — it isn't
-something that runs automatically from this repo.
+document is a copy-pasteable checklist to run **on your own Ubuntu
+server** over SSH — nothing here runs automatically from this repo.
 
-## 1. Run Supabase on your server
+Replace `supabase.example.com` below with your actual domain everywhere
+it appears.
 
-Supabase's self-hosting stack is a multi-container Docker Compose project
-maintained upstream, so pull it directly instead of copying it into this
-repo (it changes often and has several supporting config files alongside
-`docker-compose.yml`):
+## 0. Prerequisites
+
+- A DNS **A record** for your domain pointing at the server's public IP
+  (needed for step 3). Set this up first — DNS propagation can take a
+  few minutes.
+- SSH access to the server with a user that can `sudo`.
+
+## 1. Install Docker
+
+```bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker "$USER"
+newgrp docker   # or log out/in so the group change takes effect
+docker version  # sanity check
+```
+
+## 2. Get the Supabase self-hosting stack and generate secrets
+
+Pull the official docker-compose project directly (it's actively
+maintained upstream with several supporting config files alongside
+`docker-compose.yml`, so don't copy it into this repo — always fetch the
+current version):
 
 ```bash
 git clone --depth 1 https://github.com/supabase/supabase
@@ -19,63 +38,119 @@ cd supabase/docker
 cp .env.example .env
 ```
 
-Generate real secrets for `.env` (do not keep the example placeholders):
+Generate a Postgres password and a JWT secret:
 
 ```bash
-# POSTGRES_PASSWORD: any strong password
-# JWT_SECRET: 32+ random characters
-openssl rand -base64 32
+POSTGRES_PASSWORD=$(openssl rand -base64 24)
+JWT_SECRET=$(openssl rand -base64 32)
+echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
+echo "JWT_SECRET=$JWT_SECRET"
 ```
 
-Follow Supabase's docs to derive `ANON_KEY` / `SERVICE_ROLE_KEY` from your
-`JWT_SECRET` (https://supabase.com/docs/guides/self-hosting/docker), then
-start the stack:
+Derive `ANON_KEY` and `SERVICE_ROLE_KEY` from that `JWT_SECRET` using the
+script in this repo (pure Python standard library, no dependencies):
+
+```bash
+python3 generate-jwt-keys.py "$JWT_SECRET"
+# prints:
+# ANON_KEY=...
+# SERVICE_ROLE_KEY=...
+```
+
+(If `generate-jwt-keys.py` isn't already on the server, copy its contents
+from `supabase/generate-jwt-keys.py` in this repo.)
+
+Now edit `supabase/docker/.env` and set at least:
+
+```dotenv
+POSTGRES_PASSWORD=<value from above>
+JWT_SECRET=<value from above>
+ANON_KEY=<value from above>
+SERVICE_ROLE_KEY=<value from above>
+DASHBOARD_USERNAME=<pick something>
+DASHBOARD_PASSWORD=<pick something strong>
+SITE_URL=https://supabase.example.com
+API_EXTERNAL_URL=https://supabase.example.com
+SUPABASE_PUBLIC_URL=https://supabase.example.com
+```
+
+Leave everything else at its default for a first run.
+
+## 3. Start Supabase
 
 ```bash
 docker compose up -d
+docker compose ps   # wait until everything is "healthy" / "running"
 ```
 
-Studio will be reachable on the port you set in `.env`
-(`KONG_HTTP_PORT`, default `8000`).
+Studio is now listening on `KONG_HTTP_PORT` from `.env` (default `8000`),
+but only on the server itself for now — that's what the next step fixes.
 
-## 2. Put HTTPS in front of it
+## 4. Put HTTPS in front of it with Caddy
 
 **This step is not optional.** `coin-collect` is served over HTTPS via
 GitHub Pages, and browsers block a HTTPS page from calling a plain HTTP
 API (mixed content) — including the WebSocket connection Realtime sync
-needs. Put a reverse proxy with a real TLS certificate in front of the
-Kong gateway (port `8000`), for example:
+needs. Since you already have a domain, Caddy gets you a real
+Let's Encrypt certificate with almost no config:
 
-- **Caddy** (simplest — automatic Let's Encrypt cert):
-  ```
-  supabase.yourdomain.com {
-    reverse_proxy localhost:8000
-  }
-  ```
-- **Cloudflare Tunnel** if you don't want to open a port on your server at
-  all, or don't have a domain pointed at your server's IP yet.
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+  | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
+  | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install -y caddy
+```
 
-Whichever you pick, you need a public HTTPS URL that reaches Kong, e.g.
-`https://supabase.yourdomain.com`.
+Edit `/etc/caddy/Caddyfile` to just:
 
-## 3. Create the app's table
+```
+supabase.example.com {
+  reverse_proxy localhost:8000
+}
+```
 
-Open Studio (behind your proxy, or `http://localhost:8000` on the server
-itself) → SQL Editor → paste and run `supabase/schema.sql` from this repo.
-This creates the `coin_collections` table, enables Realtime on it, and
-adds permissive RLS policies (the sync code you pick in step 4 is what
-keeps your data private, not a login).
+Then reload:
 
-## 4. Point the site at your instance
+```bash
+sudo systemctl reload caddy
+```
+
+Visit `https://supabase.example.com` — you should see the Supabase
+Studio login (the `DASHBOARD_USERNAME`/`DASHBOARD_PASSWORD` from step 2).
+
+## 5. Create the app's table
+
+In Studio → SQL Editor, paste and run `supabase/schema.sql` from this
+repo. This creates the `coin_collections` table, enables Realtime on it,
+and adds permissive RLS policies (the sync code you pick in step 6 is
+what keeps your data private, not a login).
+
+## 6. Point the site at your instance
 
 Open Coin Collect, click the settings (⚙) button, and fill in:
 
-- **Supabase URL**: the public HTTPS URL from step 2
-- **Anon key**: `ANON_KEY` from your `.env`
+- **Supabase URL**: `https://supabase.example.com`
+- **Anon key**: the `ANON_KEY` value from step 2
 - **Sync code**: any string you make up — enter the *same* one on every
   device you want synced. Treat it like a password: whoever knows it can
   read/write that device group's data.
 
-Save, then repeat step 4 on your other device(s) with the same sync code.
-From then on, coin counts update automatically on every device without
-manual export/import.
+Save, then repeat step 6 on your other device(s) with the same sync
+code. From then on, coin counts update automatically on every device
+without manual export/import.
+
+## Troubleshooting
+
+- **Nothing loads / CORS errors in the browser console**: check that
+  `SITE_URL`, `API_EXTERNAL_URL`, and `SUPABASE_PUBLIC_URL` in `.env` all
+  match your real HTTPS domain, then `docker compose up -d` again to
+  pick up the change.
+- **Realtime doesn't push updates**: confirm the table was actually added
+  to the `supabase_realtime` publication — rerun the
+  `alter publication supabase_realtime add table public.coin_collections;`
+  line from `schema.sql` if you ran the file before Realtime was healthy.
+- **`docker compose ps` shows a service unhealthy**: `docker compose logs <service>`
+  — most first-run issues are a missing/incorrect value in `.env`.
