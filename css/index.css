@@ -83,9 +83,17 @@ body {
   border-color: var(--accent);
   color: var(--accent-dark);
   font-weight: 600;
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
-  text-decoration-color: var(--badge);
+}
+
+.cell:has(.count)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background-color: var(--badge);
+  transform: translateY(-50%);
 }
 
 .count {
