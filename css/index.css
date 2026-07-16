@@ -95,6 +95,13 @@ body {
   );
 }
 
+.cell.cell--full {
+  background-image: none;
+  background-color: var(--badge);
+  border-color: var(--badge);
+  color: #fff;
+}
+
 .count {
   display: none;
   position: absolute;
