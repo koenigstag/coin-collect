@@ -30,6 +30,8 @@ export const createGrid = (part: number, cells: CellData) => {
       cellElement.innerText = index.toString();
 
       if (cells[index]) {
+        cellElement.style.setProperty('--count', cells[index].toString());
+
         const countElement = document.createElement('span');
         countElement.className = 'count';
         countElement.innerText = cells[index].toString();

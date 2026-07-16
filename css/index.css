@@ -83,17 +83,13 @@ body {
   border-color: var(--accent);
   color: var(--accent-dark);
   font-weight: 600;
-}
-
-.cell:has(.count)::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 2px;
-  background-color: var(--badge);
-  transform: translateY(-50%);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--badge) 0,
+    var(--badge) 2px,
+    transparent 2px,
+    transparent calc(100% / var(--count))
+  );
 }
 
 .count {
