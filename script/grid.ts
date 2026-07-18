@@ -27,7 +27,7 @@ const PART_COLORS = [
   '#4a3aa7', // 7: violet
   '#e34948', // 8: red
   '#92400e', // 9: brown
-  '#0284c7', // 10: sky
+  '#86198f', // 10: plum
 ];
 
 export const createGrid = (part: number, cells: CellData) => {
