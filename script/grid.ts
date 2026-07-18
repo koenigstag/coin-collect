@@ -14,6 +14,22 @@ import {
 
 let currentCellIndex = 0;
 
+// One fixed hue per part (validated for adjacent-pair colorblind separation
+// and lightness/chroma) so a maxed-out cell (10+ coins) reads by which part
+// it's in, not just as generic "full".
+const PART_COLORS = [
+  '#2a78d6', // 1: blue
+  '#008300', // 2: green
+  '#e87ba4', // 3: magenta
+  '#eda100', // 4: yellow
+  '#1baf7a', // 5: aqua
+  '#eb6834', // 6: orange
+  '#4a3aa7', // 7: violet
+  '#e34948', // 8: red
+  '#92400e', // 9: brown
+  '#0284c7', // 10: sky
+];
+
 export const createGrid = (part: number, cells: CellData) => {
   const gridElement = document.createElement('div');
   gridElement.className = 'grid';
@@ -34,6 +50,7 @@ export const createGrid = (part: number, cells: CellData) => {
 
         if (cells[index] >= 10) {
           cellElement.classList.add('cell--full');
+          cellElement.style.setProperty('--part-color', PART_COLORS[part % PART_COLORS.length]);
         }
 
         const countElement = document.createElement('span');
