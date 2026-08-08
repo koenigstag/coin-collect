@@ -53,6 +53,10 @@ export const createGrid = (part: number, cells: CellData) => {
           cellElement.style.setProperty('--part-color', PART_COLORS[part % PART_COLORS.length]);
         }
 
+        if (cells[index] >= 20) {
+          cellElement.classList.add('cell--maxed');
+        }
+
         const countElement = document.createElement('span');
         countElement.className = 'count';
         countElement.innerText = cells[index].toString();

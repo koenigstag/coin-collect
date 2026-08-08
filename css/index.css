@@ -158,6 +158,10 @@ body {
   );
 }
 
+.cell.cell--maxed {
+  background-image: none;
+}
+
 .count {
   display: none;
   position: absolute;
