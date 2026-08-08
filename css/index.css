@@ -162,15 +162,6 @@ body {
   background-image: none;
 }
 
-/* Hatching alone stops being a readable count indicator at this point,
-   so show the exact number on top for both the 10-19 and 20+ tiers. */
-.cell.cell--full .count {
-  display: flex;
-  background-color: #fff;
-  color: var(--text);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
-}
-
 .count {
   display: none;
   position: absolute;
