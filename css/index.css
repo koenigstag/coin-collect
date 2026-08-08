@@ -145,11 +145,17 @@ body {
 }
 
 .cell.cell--full {
-  background-image: none;
   background-color: var(--part-color, var(--badge));
   border-color: var(--part-color, var(--badge));
   color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--part-color, var(--badge)) 0,
+    var(--part-color, var(--badge)) 6px,
+    color-mix(in srgb, var(--part-color, var(--badge)) 65%, white) 6px,
+    color-mix(in srgb, var(--part-color, var(--badge)) 65%, white) 12px
+  );
 }
 
 /* Past the solid-fill threshold, hatching can no longer show the count
