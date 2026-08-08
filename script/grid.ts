@@ -146,9 +146,15 @@ function renderCellSettingsSheet(index: number) {
     sheetElement.style.display = 'none';
   });
 
+  const cells = getCellsFromStorage();
+
+  const coinCount = document.createElement('div');
+  coinCount.className = 'count-total';
+  coinCount.innerText = `Количество монет: ${cells[index] ?? 0}`;
+  sheetElement.appendChild(coinCount);
+
   const countTotal = document.createElement('div');
   countTotal.className = 'count-total';
-  const cells = getCellsFromStorage();
   const totalCoins = calculateCellCoins(cells, index);
   countTotal.innerText = `Итого расчет: ${totalCoins}`;
   sheetElement.appendChild(countTotal);
