@@ -159,11 +159,21 @@ body {
 }
 
 /* Darker fill plus an inner ring, so a maxed cell stays distinguishable from
-   the plain part-color fill of an exactly-10 cell. */
+   the plain part-color fill of an exactly-10 cell. Lines keep counting on top
+   of it for 21-29. */
 .cell.cell--maxed {
   background-color: color-mix(in srgb, var(--part-color, var(--badge)) 80%, black);
   border-color: color-mix(in srgb, var(--part-color, var(--badge)) 80%, black);
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--part-color, var(--badge)) 30%, white);
+}
+
+/* Past three tiers the lines stop, so a second inner ring marks the cap and
+   keeps 30+ apart from the bare 20 fill. */
+.cell.cell--capped {
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--part-color, var(--badge)) 30%, white),
+    inset 0 0 0 4px color-mix(in srgb, var(--part-color, var(--badge)) 80%, black),
+    inset 0 0 0 6px color-mix(in srgb, var(--part-color, var(--badge)) 30%, white);
 }
 
 .count {
