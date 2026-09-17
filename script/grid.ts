@@ -72,6 +72,10 @@ export const createGrid = (part: number, cells: CellData) => {
           cellElement.classList.add('cell--maxed');
         }
 
+        if (count >= 30) {
+          cellElement.classList.add('cell--capped');
+        }
+
         if (dots > 0) {
           const dotsElement = document.createElement('div');
           dotsElement.className = 'dots';
