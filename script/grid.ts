@@ -48,11 +48,15 @@ export const createGrid = (part: number, cells: CellData) => {
       if (cells[index]) {
         const count = cells[index];
 
-        // Line density restarts with every tier of ten, so 11-19 and 21-29
-        // coins draw the same evenly spread 1-9 lines that 1-9 coins do, each
-        // over its own tier fill. 10, 20 and 30+ are the clean tier-boundary
-        // states.
-        const lines = count < 30 ? count % 10 : 0;
+        // Line density restarts with every tier of ten, so 11-19, 21-29 and
+        // on draw the same evenly spread 1-9 lines that 1-9 coins do, each
+        // over its own tier fill. The round numbers are the clean
+        // tier-boundary states.
+        const lines = count % 10;
+
+        // The fill stops changing past the third tier, so from 30 on a dot
+        // per tier counts them off in the corner: 30s one dot, 40s two.
+        const dots = Math.max(0, Math.floor(count / 10) - 2);
 
         if (lines > 0) {
           cellElement.classList.add('cell--lined');
@@ -68,8 +72,13 @@ export const createGrid = (part: number, cells: CellData) => {
           cellElement.classList.add('cell--maxed');
         }
 
-        if (count >= 30) {
-          cellElement.classList.add('cell--capped');
+        if (dots > 0) {
+          const dotsElement = document.createElement('div');
+          dotsElement.className = 'dots';
+          for (let dot = 0; dot < dots; dot++) {
+            dotsElement.appendChild(document.createElement('i'));
+          }
+          cellElement.appendChild(dotsElement);
         }
 
         const countElement = document.createElement('span');
