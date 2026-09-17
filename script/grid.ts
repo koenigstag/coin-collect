@@ -46,14 +46,24 @@ export const createGrid = (part: number, cells: CellData) => {
       cellElement.innerText = index.toString();
 
       if (cells[index]) {
-        cellElement.style.setProperty('--count', cells[index].toString());
+        const count = cells[index];
 
-        if (cells[index] >= 10) {
+        // Line density restarts with every tier of ten, so 11-19 coins draw
+        // the same evenly spread 1-9 lines that 1-9 coins do, just over the
+        // part-colored fill. 10 and 20+ are the clean tier-boundary states.
+        const lines = count < 20 ? count % 10 : 0;
+
+        if (lines > 0) {
+          cellElement.classList.add('cell--lined');
+          cellElement.style.setProperty('--lines', lines.toString());
+        }
+
+        if (count >= 10) {
           cellElement.classList.add('cell--full');
           cellElement.style.setProperty('--part-color', PART_COLORS[part % PART_COLORS.length]);
         }
 
-        if (cells[index] >= 20) {
+        if (count >= 20) {
           cellElement.classList.add('cell--maxed');
         }
 
