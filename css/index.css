@@ -136,30 +136,22 @@ body {
 
 /* One diagonal line per coin of the current tier of ten, spread evenly over
    the cell: 1-9 coins draw 1-9 lines, 11-19 draw the same 1-9 lines on top of
-   the part-colored fill. 10 and 20+ are the clean tier-boundary states.
-   --line-half is half the line width, so the line stays centred in its
-   period. */
+   the part-colored fill. 10 and 20+ are the clean tier-boundary states. */
 .cell.cell--lined {
-  --line-half: 1px;
   --period: calc(100% / var(--lines));
   background-image: repeating-linear-gradient(
     135deg,
     transparent 0,
-    transparent calc(var(--period) / 2 - var(--line-half)),
-    var(--line-color, var(--badge)) calc(var(--period) / 2 - var(--line-half)),
-    var(--line-color, var(--badge)) calc(var(--period) / 2 + var(--line-half)),
-    transparent calc(var(--period) / 2 + var(--line-half)),
+    transparent calc(var(--period) / 2 - 1px),
+    var(--line-color, var(--badge)) calc(var(--period) / 2 - 1px),
+    var(--line-color, var(--badge)) calc(var(--period) / 2 + 1px),
+    transparent calc(var(--period) / 2 + 1px),
     transparent var(--period)
   );
 }
 
 .cell.cell--full {
-  /* Thinner than the first tier, so a restarted count of 11-19 lines reads as
-     the second pass over the cell rather than a repeat of 1-9. */
-  --line-half: 0.5px;
-  /* Lighter than the first tier's line too: a 1px stroke needs the extra
-     contrast to carry the same weight over a saturated fill. */
-  --line-color: color-mix(in srgb, var(--part-color, var(--badge)) 15%, white);
+  --line-color: color-mix(in srgb, var(--part-color, var(--badge)) 30%, white);
   background-color: var(--part-color, var(--badge));
   border-color: var(--part-color, var(--badge));
   color: #fff;
